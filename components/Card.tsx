@@ -5,6 +5,7 @@ import { CardType } from "@/types/kanban";
 
 interface CardProps {
   card: CardType;
+  onEditCard: (cardId: string, newTitle: string, newDescription: string, newPriority: "low" | "medium" | "high") => void;
 }
 
 const priorityColors = {
@@ -19,9 +20,30 @@ const priorityLabels = {
   high: "Alta",
 };
 
-export default function Card({ card }: CardProps) {
+const IconEdit = ({ className }: { className?: string }) => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    className={className}
+  >
+    <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" />
+    <path d="m15 5 4 4" />
+  </svg>
+);
+
+export default function Card({ card, onEditCard }: CardProps) {
+  const handleEditClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    onEditCard(card.id, card.title, card.description, card.priority);
+  };
+
   return (
-    <div className="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 cursor-pointer hover:shadow-md transition-all duration-200 group">
+    <div className="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 cursor-pointer hover:shadow-md hover:border-cyan-300 transition-all duration-200 group">
       <div className="flex items-start justify-between mb-2">
         <span
           className={`text-xs font-bold px-3 py-1 rounded-full ${
@@ -30,6 +52,13 @@ export default function Card({ card }: CardProps) {
         >
           {priorityLabels[card.priority]}
         </span>
+        <button
+          onClick={handleEditClick}
+          className="opacity-0 group-hover:opacity-100 hover:bg-slate-100 p-1.5 rounded-lg transition-all"
+          title="Editar tarea"
+        >
+          <IconEdit className="w-4 h-4 text-slate-500" />
+        </button>
       </div>
 
       <h4 className="font-semibold text-slate-800 mb-2 leading-snug">

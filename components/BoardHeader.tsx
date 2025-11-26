@@ -2,6 +2,10 @@
 
 import React from "react";
 
+interface BoardHeaderProps {
+  onCreateTask: () => void;
+}
+
 // --- Icons ---
 const IconPlus = ({ className }: { className?: string }) => (
   <svg
@@ -51,7 +55,7 @@ const IconMoreHorizontal = ({ className }: { className?: string }) => (
   </svg>
 );
 
-export default function BoardHeader() {
+export default function BoardHeader({ onCreateTask }: BoardHeaderProps) {
   return (
     <header className="h-20 px-8 flex items-center justify-between bg-white border-b border-slate-100 flex-shrink-0 z-10">
       {/* Left: Board Info */}
@@ -103,7 +107,10 @@ export default function BoardHeader() {
             <IconFilter className="w-5 h-5" />
           </button>
           
-          <button className="flex items-center gap-2 bg-cyan-500 hover:bg-cyan-600 text-white px-5 py-2.5 rounded-2xl font-semibold shadow-lg shadow-cyan-500/25 transition-all active:scale-95">
+          <button 
+            onClick={onCreateTask}
+            className="flex items-center gap-2 bg-cyan-500 hover:bg-cyan-600 text-white px-5 py-2.5 rounded-2xl font-semibold shadow-lg shadow-cyan-500/25 transition-all active:scale-95"
+          >
             <IconPlus className="w-5 h-5" />
             <span>Crear Tarea</span>
           </button>

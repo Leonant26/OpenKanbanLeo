@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import React, { useState } from "react";
 import Sidebar from "@/components/Sidebar";
 import BoardHeader from "@/components/BoardHeader";
 import Column from "@/components/Column";
@@ -112,6 +112,12 @@ export default function Home() {
   const [columns, setColumns] = useState<ColumnType[]>(initialColumns);
   const [isAddingColumn, setIsAddingColumn] = useState(false);
   const [newColumnTitle, setNewColumnTitle] = useState("");
+  const [editingColumnId, setEditingColumnId] = useState<string | null>(null);
+  const [editingColumnTitle, setEditingColumnTitle] = useState("");
+  const [isCreatingTask, setIsCreatingTask] = useState(false);
+  const [newTaskTitle, setNewTaskTitle] = useState("");
+  const [newTaskColumn, setNewTaskColumn] = useState("");
+  const [newTaskPriority, setNewTaskPriority] = useState<"low" | "medium" | "high">("medium");
 
   const handleAddNewCard = (columnId: string, title: string) => {
     const newCard: CardType = {
@@ -131,14 +137,128 @@ export default function Home() {
     );
   };
 
-  const handleAddNewColumn = (title: string) => {
+  const handleCreateTask = () => {
+    setIsCreatingTask(true);
+    if (columns.length > 0) {
+      setNewTaskColumn(columns[0].id);
+    }
+  };
+
+  const handleSaveTask = () => {
+    if (newTaskTitle.trim() && newTaskColumn) {
+      const newCard: CardType = {
+        id: `card-${Date.now()}`,
+        title: newTaskTitle.trim(),
+        description: "",
+        columnId: newTaskColumn,
+        priority: newTaskPriority,
+      };
+
+      setColumns((prevColumns) =>
+        prevColumns.map((col) =>
+          col.id === newTaskColumn
+            ? { ...col, cards: [...col.cards, newCard] }
+            : col
+        )
+      );
+
+      setNewTaskTitle("");
+      setNewTaskPriority("medium");
+      setIsCreatingTask(false);
+    }
+  };
+
+  const handleCancelTask = () => {
+    setNewTaskTitle("");
+    setNewTaskPriority("medium");
+    setIsCreatingTask(false);
+  };
+
+  const [editingCard, setEditingCard] = useState<CardType | null>(null);
+  const [editCardTitle, setEditCardTitle] = useState("");
+  const [editCardDescription, setEditCardDescription] = useState("");
+  const [editCardPriority, setEditCardPriority] = useState<"low" | "medium" | "high">("medium");
+
+  const handleEditCard = (cardId: string, title: string, description: string, priority: "low" | "medium" | "high") => {
+    const card = columns.flatMap(col => col.cards).find(c => c.id === cardId);
+    if (card) {
+      setEditingCard(card);
+      setEditCardTitle(title);
+      setEditCardDescription(description);
+      setEditCardPriority(priority);
+    }
+  };
+
+  const handleSaveCardEdit = () => {
+    if (editingCard && editCardTitle.trim()) {
+      setColumns((prevColumns) =>
+        prevColumns.map((col) => ({
+          ...col,
+          cards: col.cards.map((card) =>
+            card.id === editingCard.id
+              ? { ...card, title: editCardTitle.trim(), description: editCardDescription.trim(), priority: editCardPriority }
+              : card
+          ),
+        }))
+      );
+      setEditingCard(null);
+      setEditCardTitle("");
+      setEditCardDescription("");
+      setEditCardPriority("medium");
+    }
+  };
+
+  const handleCancelCardEdit = () => {
+    setEditingCard(null);
+    setEditCardTitle("");
+    setEditCardDescription("");
+    setEditCardPriority("medium");
+  };
+
+  const handleAddNewColumn = (title: string, insertIndex?: number) => {
     const newColumn: ColumnType = {
       id: `col-${Date.now()}`,
       title,
       cards: [],
     };
 
-    setColumns([...columns, newColumn]);
+    if (insertIndex !== undefined) {
+      setColumns((prevColumns) => {
+        const newColumns = [...prevColumns];
+        newColumns.splice(insertIndex, 0, newColumn);
+        return newColumns;
+      });
+    } else {
+      setColumns([...columns, newColumn]);
+    }
+  };
+
+  const handleDeleteColumn = (columnId: string) => {
+    setColumns((prevColumns) => prevColumns.filter((col) => col.id !== columnId));
+  };
+
+  const handleEditColumn = (columnId: string, currentTitle: string) => {
+    setEditingColumnId(columnId);
+    setEditingColumnTitle(currentTitle);
+  };
+
+  const handleSaveColumnTitle = (columnId: string) => {
+    if (editingColumnTitle.trim()) {
+      setColumns((prevColumns) =>
+        prevColumns.map((col) =>
+          col.id === columnId
+            ? { ...col, title: editingColumnTitle.trim() }
+            : col
+        )
+      );
+    }
+    setEditingColumnId(null);
+    setEditingColumnTitle("");
+  };
+
+  const handleCancelEditColumn = () => {
+    setEditingColumnId(null);
+    setEditingColumnTitle("");
   };
 
   const handleAddColumn = () => {
@@ -159,63 +279,264 @@ export default function Home() {
       <Sidebar />
 
       <div className="flex-1 flex flex-col h-full min-w-0">
-        <BoardHeader />
+        <BoardHeader onCreateTask={handleCreateTask} />
 
         <main className="flex-1 overflow-x-auto overflow-y-hidden bg-gray-50 p-6">
-          <div className="h-full inline-flex items-start gap-6">
-            {columns.map((column) => (
-              <Column
-                key={column.id}
-                column={column}
-                onAddCard={handleAddNewCard}
-              />
+          <div className="h-full inline-flex items-start gap-4 group">
+            {columns.map((column, index) => (
+              <React.Fragment key={column.id}>
+                {editingColumnId === column.id ? (
+                  <div className="w-80 flex-shrink-0 bg-slate-50 rounded-2xl p-4">
+                    <input
+                      autoFocus
+                      type="text"
+                      value={editingColumnTitle}
+                      onChange={(e) => setEditingColumnTitle(e.target.value)}
+                      className="w-full px-3 py-2 text-lg font-bold border-2 border-cyan-400 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-400 mb-3"
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          handleSaveColumnTitle(column.id);
+                        }
+                        if (e.key === "Escape") {
+                          handleCancelEditColumn();
+                        }
+                      }}
+                      onBlur={() => handleSaveColumnTitle(column.id)}
+                    />
+                  </div>
+                ) : (
+                  <Column
+                    column={column}
+                    onAddCard={handleAddNewCard}
+                    onEditCard={handleEditCard}
+                    onEditColumn={() => handleEditColumn(column.id, column.title)}
+                    onDeleteColumn={() => handleDeleteColumn(column.id)}
+                  />
+                )}
+                
+                {/* Insert button between columns */}
+                <button
+                  onClick={() => handleAddNewColumn("Nueva Lista", index + 1)}
+                  className="w-12 flex-shrink-0 h-12 self-start mt-2 opacity-0 group-hover:opacity-100 border-2 border-dashed border-slate-300 rounded-2xl flex items-center justify-center text-slate-400 hover:border-cyan-400 hover:text-cyan-600 hover:bg-cyan-50 transition-all"
+                  title="Añadir lista aquí"
+                >
+                  <IconPlus className="w-5 h-5" />
+                </button>
+              </React.Fragment>
             ))}
 
-            {isAddingColumn ? (
-              <div className="w-80 flex-shrink-0 bg-slate-50 rounded-2xl p-4 border-2 border-cyan-300">
-                <input
-                  autoFocus
-                  type="text"
-                  value={newColumnTitle}
-                  onChange={(e) => setNewColumnTitle(e.target.value)}
-                  placeholder="Título de la lista..."
-                  className="w-full px-4 py-2 text-sm font-semibold border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-400 mb-3"
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") {
-                      handleAddColumn();
-                    }
-                    if (e.key === "Escape") {
-                      handleCancelColumn();
-                    }
-                  }}
-                />
-                <div className="flex gap-2">
-                  <button
-                    onClick={handleAddColumn}
-                    className="flex-1 bg-cyan-500 hover:bg-cyan-600 text-white px-4 py-2 rounded-xl font-semibold text-sm transition-colors"
-                  >
-                    Añadir Lista
-                  </button>
-                  <button
-                    onClick={handleCancelColumn}
-                    className="p-2 text-slate-500 hover:bg-slate-100 rounded-xl transition-colors"
-                  >
-                    <IconX className="w-5 h-5" />
-                  </button>
+            {/* Add column at the end - only show when no columns exist */}
+            {columns.length === 0 && (
+              isAddingColumn ? (
+                <div className="w-80 flex-shrink-0 bg-slate-50 rounded-2xl p-4 border-2 border-cyan-300">
+                  <input
+                    autoFocus
+                    type="text"
+                    value={newColumnTitle}
+                    onChange={(e) => setNewColumnTitle(e.target.value)}
+                    placeholder="Título de la lista..."
+                    className="w-full px-4 py-2 text-sm font-semibold border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-400 mb-3"
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        handleAddColumn();
+                      }
+                      if (e.key === "Escape") {
+                        handleCancelColumn();
+                      }
+                    }}
+                  />
+                  <div className="flex gap-2">
+                    <button
+                      onClick={handleAddColumn}
+                      className="flex-1 bg-cyan-500 hover:bg-cyan-600 text-white px-4 py-2 rounded-xl font-semibold text-sm transition-colors"
+                    >
+                      Añadir Lista
+                    </button>
+                    <button
+                      onClick={handleCancelColumn}
+                      className="p-2 text-slate-500 hover:bg-slate-100 rounded-xl transition-colors"
+                    >
+                      <IconX className="w-5 h-5" />
+                    </button>
+                  </div>
                 </div>
-              </div>
-            ) : (
-              <button
-                onClick={() => setIsAddingColumn(true)}
-                className="w-80 flex-shrink-0 h-12 border-2 border-dashed border-slate-300 rounded-2xl flex items-center justify-center text-slate-500 font-semibold hover:border-cyan-400 hover:text-cyan-600 hover:bg-cyan-50 transition-all cursor-pointer group"
-              >
-                <IconPlus className="w-5 h-5 mr-2 group-hover:scale-110 transition-transform" />
-                Añadir Lista
-              </button>
+              ) : (
+                <button
+                  onClick={() => setIsAddingColumn(true)}
+                  className="w-80 flex-shrink-0 h-12 border-2 border-dashed border-slate-300 rounded-2xl flex items-center justify-center text-slate-500 font-semibold hover:border-cyan-400 hover:text-cyan-600 hover:bg-cyan-50 transition-all cursor-pointer group"
+                >
+                  <IconPlus className="w-5 h-5 mr-2 group-hover:scale-110 transition-transform" />
+                  Añadir Lista
+                </button>
+              )
             )}
           </div>
         </main>
       </div>
+
+      {/* Create Task Modal */}
+      {isCreatingTask && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={handleCancelTask}>
+          <div className="bg-white rounded-3xl p-6 w-full max-w-md shadow-2xl" onClick={(e) => e.stopPropagation()}>
+            <h2 className="text-2xl font-bold text-slate-800 mb-4">Crear Nueva Tarea</h2>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 mb-2">Título de la tarea</label>
+                <input
+                  autoFocus
+                  type="text"
+                  value={newTaskTitle}
+                  onChange={(e) => setNewTaskTitle(e.target.value)}
+                  placeholder="Escribe el título..."
+                  className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-400 focus:border-cyan-400"
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      handleSaveTask();
+                    }
+                    if (e.key === "Escape") {
+                      handleCancelTask();
+                    }
+                  }}
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 mb-2">Columna</label>
+                <select
+                  value={newTaskColumn}
+                  onChange={(e) => setNewTaskColumn(e.target.value)}
+                  className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-400 focus:border-cyan-400"
+                >
+                  {columns.map((col) => (
+                    <option key={col.id} value={col.id}>
+                      {col.title}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 mb-2">Prioridad</label>
+                <div className="flex gap-2">
+                  {(["low", "medium", "high"] as const).map((priority) => (
+                    <button
+                      key={priority}
+                      onClick={() => setNewTaskPriority(priority)}
+                      className={`flex-1 px-4 py-2 rounded-xl font-semibold text-sm transition-all ${
+                        newTaskPriority === priority
+                          ? priority === "low"
+                            ? "bg-blue-500 text-white"
+                            : priority === "medium"
+                            ? "bg-orange-500 text-white"
+                            : "bg-red-500 text-white"
+                          : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                      }`}
+                    >
+                      {priority === "low" ? "Baja" : priority === "medium" ? "Media" : "Alta"}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <div className="flex gap-3 mt-6">
+              <button
+                onClick={handleCancelTask}
+                className="flex-1 px-4 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-semibold transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleSaveTask}
+                className="flex-1 px-4 py-3 bg-cyan-500 hover:bg-cyan-600 text-white rounded-xl font-semibold transition-colors"
+              >
+                Crear Tarea
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Card Modal */}
+      {editingCard && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={handleCancelCardEdit}>
+          <div className="bg-white rounded-3xl p-6 w-full max-w-md shadow-2xl" onClick={(e) => e.stopPropagation()}>
+            <h2 className="text-2xl font-bold text-slate-800 mb-4">Editar Tarea</h2>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 mb-2">Título de la tarea</label>
+                <input
+                  autoFocus
+                  type="text"
+                  value={editCardTitle}
+                  onChange={(e) => setEditCardTitle(e.target.value)}
+                  placeholder="Escribe el título..."
+                  className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-400 focus:border-cyan-400"
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && !e.shiftKey) {
+                      handleSaveCardEdit();
+                    }
+                    if (e.key === "Escape") {
+                      handleCancelCardEdit();
+                    }
+                  }}
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 mb-2">Descripción</label>
+                <textarea
+                  value={editCardDescription}
+                  onChange={(e) => setEditCardDescription(e.target.value)}
+                  placeholder="Añade una descripción..."
+                  rows={4}
+                  className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-400 focus:border-cyan-400 resize-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 mb-2">Prioridad</label>
+                <div className="flex gap-2">
+                  {(["low", "medium", "high"] as const).map((priority) => (
+                    <button
+                      key={priority}
+                      onClick={() => setEditCardPriority(priority)}
+                      className={`flex-1 px-4 py-2 rounded-xl font-semibold text-sm transition-all ${
+                        editCardPriority === priority
+                          ? priority === "low"
+                            ? "bg-blue-500 text-white"
+                            : priority === "medium"
+                            ? "bg-orange-500 text-white"
+                            : "bg-red-500 text-white"
+                          : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                      }`}
+                    >
+                      {priority === "low" ? "Baja" : priority === "medium" ? "Media" : "Alta"}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <div className="flex gap-3 mt-6">
+              <button
+                onClick={handleCancelCardEdit}
+                className="flex-1 px-4 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-semibold transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleSaveCardEdit}
+                className="flex-1 px-4 py-3 bg-cyan-500 hover:bg-cyan-600 text-white rounded-xl font-semibold transition-colors"
+              >
+                Guardar Cambios
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
