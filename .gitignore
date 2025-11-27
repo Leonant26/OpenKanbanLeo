@@ -17,7 +17,7 @@ Thumbs.db
 *.swo
 
 # ------------------------------------------------------
-# BACKEND (LARAVEL 11)
+# BACKEND (LARAVEL 12)
 # ------------------------------------------------------
 /backend/vendor/
 /backend/node_modules/
