@@ -27,4 +27,5 @@ export interface BoardType {
   name: string;
   backgroundColor: string;
   columns: ColumnType[];
+  activityLog: HistoryLogType[];
 }

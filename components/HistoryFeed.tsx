@@ -71,7 +71,15 @@ export default function HistoryFeed({ history }: HistoryFeedProps) {
           <div className="flex-1 pb-4">
             <div className="bg-slate-50 dark:bg-gray-700 rounded-xl p-3 group-hover:bg-slate-100 dark:group-hover:bg-gray-600 transition-colors">
               <p className="text-sm text-slate-700 dark:text-slate-200 mb-1">
-                {log.message}
+                {log.message.split(/(\*\*.*?\*\*)/).map((part, i) => 
+                  part.startsWith("**") && part.endsWith("**") ? (
+                    <strong key={i} className="font-bold text-slate-900 dark:text-white">
+                      {part.slice(2, -2)}
+                    </strong>
+                  ) : (
+                    part
+                  )
+                )}
               </p>
               <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
                 <span className="font-semibold text-cyan-600 dark:text-cyan-400">

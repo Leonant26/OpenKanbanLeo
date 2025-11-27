@@ -1,6 +1,8 @@
 "use client";
 
 import React from "react";
+import { useSortable } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import { CardType } from "@/types/kanban";
 
 interface CardProps {
@@ -56,6 +58,26 @@ const IconTrash = ({ className }: { className?: string }) => (
 );
 
 export default function Card({ card, onEditCard, onDeleteCard, onCardClick }: CardProps) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({
+    id: card.id,
+    data: {
+      type: "Card",
+      card,
+    },
+  });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  };
+
   const handleEditClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     onEditCard(card.id, card.title, card.description, card.priority);
@@ -65,10 +87,24 @@ export default function Card({ card, onEditCard, onDeleteCard, onCardClick }: Ca
     onCardClick(card.id);
   };
 
+  if (isDragging) {
+    return (
+      <div
+        ref={setNodeRef}
+        style={style}
+        className="bg-slate-100 dark:bg-gray-700 p-4 rounded-2xl border-2 border-dashed border-slate-300 dark:border-gray-600 opacity-50 h-[150px]"
+      />
+    );
+  }
+
   return (
     <div
+      ref={setNodeRef}
+      style={style}
+      {...attributes}
+      {...listeners}
       onClick={handleCardClick}
-      className="bg-white dark:bg-gray-700 p-4 rounded-2xl shadow-sm border border-slate-200 dark:border-gray-600 cursor-pointer hover:shadow-md hover:border-cyan-300 dark:hover:border-cyan-500 transition-all duration-200 group"
+      className="bg-white dark:bg-gray-700 p-4 rounded-2xl shadow-sm border border-slate-200 dark:border-gray-600 cursor-grab active:cursor-grabbing hover:shadow-md hover:border-cyan-300 dark:hover:border-cyan-500 transition-all duration-200 group touch-none"
     >
       <div className="flex items-start justify-between mb-2">
         <span
@@ -83,6 +119,7 @@ export default function Card({ card, onEditCard, onDeleteCard, onCardClick }: Ca
             onClick={handleEditClick}
             className="hover:bg-slate-100 dark:hover:bg-gray-600 p-1.5 rounded-lg transition-all"
             title="Editar tarea"
+            onPointerDown={(e) => e.stopPropagation()}
           >
             <IconEdit className="w-4 h-4 text-slate-500 dark:text-slate-300" />
           </button>
@@ -93,6 +130,7 @@ export default function Card({ card, onEditCard, onDeleteCard, onCardClick }: Ca
             }}
             className="hover:bg-red-100 dark:hover:bg-red-900/30 p-1.5 rounded-lg transition-all"
             title="Eliminar tarea"
+            onPointerDown={(e) => e.stopPropagation()}
           >
             <IconTrash className="w-4 h-4 text-red-500" />
           </button>
