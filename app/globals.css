@@ -39,37 +39,45 @@ body {
   background: #94a3b8;
 }
 
-/* Playful Theme - Pastel Colors */
+/* Playful Theme - Pink Pastel Dream */
 .playful {
-  --playful-pink: #ffc0cb;
-  --playful-lavender: #e6e6fa;
-  --playful-mint: #b5ead7;
-  --playful-peach: #ffdab9;
-  --playful-sky: #b0e0e6;
-  --playful-lilac: #dda0dd;
-  --playful-bg: #fff5f7;
-  --playful-text: #6b4c7a;
+  --playful-pink: #ffb7c5;      /* Cherry Blossom Pink */
+  --playful-rose: #ffcdd2;      /* Soft Rose */
+  --playful-lavender: #f3e5f5;  /* Pinkish Lavender */
+  --playful-cream: #fff0f5;     /* Lavender Blush */
+  --playful-accent: #f48fb1;    /* Pink Accent */
+  --playful-bg: #fff0f5;        /* Very light pink bg */
+  --playful-text: #880e4f;      /* Deep Pink/Plum for text */
 }
 
 .playful body {
-  background: linear-gradient(135deg, #ffc0cb 0%, #e6e6fa 50%, #b5ead7 100%);
+  background: linear-gradient(135deg, #ffe6ea 0%, #fff0f5 50%, #f3e5f5 100%);
+  background-attachment: fixed;
 }
 
 .playful .bg-white {
-  background-color: #fffbfc !important;
-  border: 1px solid #ffc0cb30 !important;
+  background-color: rgba(255, 255, 255, 0.8) !important;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 183, 197, 0.3) !important;
+  box-shadow: 0 4px 20px rgba(255, 183, 197, 0.15) !important;
 }
 
 .playful .bg-gray-50 {
-  background-color: var(--playful-bg) !important;
+  background-color: rgba(255, 240, 245, 0.6) !important; /* Transparent pinkish */
 }
 
 .playful .bg-gray-800 {
-  background-color: #f8e8f0 !important;
+  background-color: #fff0f5 !important; /* Override dark mode bg in playful */
 }
 
 .playful .text-slate-800 {
   color: var(--playful-text) !important;
+}
+
+.playful .text-slate-500,
+.playful .text-slate-600,
+.playful .text-slate-700 {
+  color: #ad1457 !important; /* Softer pink text */
 }
 
 .playful .text-white {

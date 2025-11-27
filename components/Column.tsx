@@ -9,8 +9,10 @@ interface ColumnProps {
   onAddCard: (columnId: string, title: string) => void;
   onEditCard: (cardId: string, title: string, description: string, priority: "low" | "medium" | "high") => void;
   onDeleteCard: (cardId: string) => void;
+  onCardClick: (cardId: string) => void;
   onEditColumn: () => void;
   onDeleteColumn: () => void;
+  onChangeColor: (columnId: string, color: string) => void;
 }
 
 
@@ -79,10 +81,39 @@ const IconEdit = ({ className }: { className?: string }) => (
   </svg>
 );
 
+const IconPalette = ({ className }: { className?: string }) => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    className={className}
+  >
+    <circle cx="13.5" cy="6.5" r=".5" fill="currentColor" />
+    <circle cx="17.5" cy="10.5" r=".5" fill="currentColor" />
+    <circle cx="8.5" cy="7.5" r=".5" fill="currentColor" />
+    <circle cx="6.5" cy="12.5" r=".5" fill="currentColor" />
+    <path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z" />
+  </svg>
+);
 
-export default function Column({ column, onAddCard, onEditCard, onDeleteCard, onEditColumn, onDeleteColumn }: ColumnProps) {
+
+const COLUMN_COLORS = [
+  { name: "Gris", value: "bg-slate-200 dark:bg-gray-700" },
+  { name: "Azul", value: "bg-blue-200 dark:bg-blue-900/40" },
+  { name: "Verde", value: "bg-green-200 dark:bg-green-900/40" },
+  { name: "Rosa", value: "bg-pink-200 dark:bg-pink-900/40" },
+  { name: "Púrpura", value: "bg-purple-200 dark:bg-purple-900/40" },
+  { name: "Naranja", value: "bg-orange-200 dark:bg-orange-900/40" },
+];
+
+export default function Column({ column, onAddCard, onEditCard, onDeleteCard, onCardClick, onEditColumn, onDeleteColumn, onChangeColor }: ColumnProps) {
   const [isAddingCard, setIsAddingCard] = useState(false);
   const [newCardTitle, setNewCardTitle] = useState("");
+  const [showColorPicker, setShowColorPicker] = useState(false);
 
   const handleAddCard = () => {
     if (newCardTitle.trim()) {
@@ -97,8 +128,10 @@ export default function Column({ column, onAddCard, onEditCard, onDeleteCard, on
     setIsAddingCard(false);
   };
 
+  const columnColor = column.color || "bg-slate-50 dark:bg-gray-700";
+
   return (
-    <div className="w-80 flex-shrink-0 flex flex-col max-h-full bg-slate-50 dark:bg-gray-700 rounded-2xl p-4 transition-colors duration-200">
+    <div className={`w-80 flex-shrink-0 flex flex-col max-h-full ${columnColor} rounded-2xl p-4 transition-colors duration-200`}>
       <div className="flex items-center justify-between px-2 mb-4">
         <div className="flex items-center gap-2 flex-1">
           <h3 className="font-bold text-slate-800 dark:text-white text-lg">{column.title}</h3>
@@ -111,6 +144,40 @@ export default function Column({ column, onAddCard, onEditCard, onDeleteCard, on
           </button>
         </div>
         <div className="flex items-center gap-2">
+          <div className="relative">
+            <button
+              onClick={() => setShowColorPicker(!showColorPicker)}
+              className="hover:bg-slate-200 dark:hover:bg-gray-600 p-1.5 rounded-lg transition-all"
+              title="Cambiar color"
+            >
+              <IconPalette className="w-4 h-4 text-slate-500 dark:text-slate-300" />
+            </button>
+            
+            {showColorPicker && (
+              <div className="absolute right-0 top-full mt-2 bg-white dark:bg-gray-800 rounded-xl shadow-2xl border border-slate-200 dark:border-gray-600 p-3 z-50 min-w-[200px]">
+                <p className="text-xs font-semibold text-slate-600 dark:text-slate-300 mb-2">Color de la columna</p>
+                <div className="grid grid-cols-2 gap-2">
+                  {COLUMN_COLORS.map((color) => (
+                    <button
+                      key={color.value}
+                      onClick={() => {
+                        onChangeColor(column.id, color.value);
+                        setShowColorPicker(false);
+                      }}
+                      className={`px-3 py-2 rounded-lg text-xs font-medium transition-all ${
+                        columnColor === color.value
+                          ? "ring-2 ring-cyan-500 bg-cyan-50 dark:bg-cyan-900/30 text-cyan-700 dark:text-cyan-400"
+                          : "bg-slate-100 dark:bg-gray-700 text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-gray-600"
+                      }`}
+                    >
+                      {color.name}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+          
           <span className="bg-slate-200 dark:bg-gray-600 text-slate-700 dark:text-slate-200 text-xs font-bold px-3 py-1 rounded-full">
             {column.cards.length}
           </span>
@@ -126,7 +193,7 @@ export default function Column({ column, onAddCard, onEditCard, onDeleteCard, on
 
       <div className="flex-1 overflow-y-auto custom-scrollbar pr-2 space-y-3 mb-3">
         {column.cards.map((card) => (
-          <Card key={card.id} card={card} onEditCard={onEditCard} onDeleteCard={onDeleteCard} />
+          <Card key={card.id} card={card} onEditCard={onEditCard} onDeleteCard={onDeleteCard} onCardClick={onCardClick} />
         ))}
       </div>
 

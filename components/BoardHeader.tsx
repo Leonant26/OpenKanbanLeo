@@ -84,11 +84,11 @@ const IconSun = ({ className }: { className?: string }) => (
 );
 
 const boardColors = [
-  { name: "Azul Claro", class: "bg-blue-50 dark:bg-blue-900/20" },
-  { name: "Verde Claro", class: "bg-green-50 dark:bg-green-900/20" },
-  { name: "Rosa Claro", class: "bg-pink-50 dark:bg-pink-900/20" },
-  { name: "Púrpura Claro", class: "bg-purple-50 dark:bg-purple-900/20" },
-  { name: "Gris Claro", class: "bg-gray-50 dark:bg-gray-800" },
+  { name: "Azul", class: "bg-blue-100 dark:bg-blue-900/40" },
+  { name: "Verde", class: "bg-green-100 dark:bg-green-900/40" },
+  { name: "Rosa", class: "bg-pink-100 dark:bg-pink-900/40" },
+  { name: "Púrpura", class: "bg-purple-100 dark:bg-purple-900/40" },
+  { name: "Gris", class: "bg-gray-100 dark:bg-gray-800" },
 ];
 
 export default function BoardHeader({ boardName, boardColor, onColorChange, onCreateTask }: BoardHeaderProps) {

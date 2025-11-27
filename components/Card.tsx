@@ -7,12 +7,13 @@ interface CardProps {
   card: CardType;
   onEditCard: (cardId: string, newTitle: string, newDescription: string, newPriority: "low" | "medium" | "high") => void;
   onDeleteCard: (cardId: string) => void;
+  onCardClick: (cardId: string) => void;
 }
 
 const priorityColors = {
-  low: "bg-blue-100 text-blue-700",
-  medium: "bg-orange-100 text-orange-700",
-  high: "bg-red-100 text-red-700",
+  low: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",
+  medium: "bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400",
+  high: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400",
 };
 
 const priorityLabels = {
@@ -54,14 +55,21 @@ const IconTrash = ({ className }: { className?: string }) => (
   </svg>
 );
 
-export default function Card({ card, onEditCard, onDeleteCard }: CardProps) {
+export default function Card({ card, onEditCard, onDeleteCard, onCardClick }: CardProps) {
   const handleEditClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     onEditCard(card.id, card.title, card.description, card.priority);
   };
 
+  const handleCardClick = () => {
+    onCardClick(card.id);
+  };
+
   return (
-    <div className="bg-white dark:bg-gray-700 p-4 rounded-2xl shadow-sm border border-slate-200 dark:border-gray-600 cursor-pointer hover:shadow-md hover:border-cyan-300 dark:hover:border-cyan-500 transition-all duration-200 group">
+    <div
+      onClick={handleCardClick}
+      className="bg-white dark:bg-gray-700 p-4 rounded-2xl shadow-sm border border-slate-200 dark:border-gray-600 cursor-pointer hover:shadow-md hover:border-cyan-300 dark:hover:border-cyan-500 transition-all duration-200 group"
+    >
       <div className="flex items-start justify-between mb-2">
         <span
           className={`text-xs font-bold px-3 py-1 rounded-full ${
@@ -111,6 +119,11 @@ export default function Card({ card, onEditCard, onDeleteCard }: CardProps) {
             />
           </div>
         </div>
+        {card.history && card.history.length > 0 && (
+          <span className="text-xs text-slate-400 dark:text-slate-500">
+            {card.history.length} {card.history.length === 1 ? "cambio" : "cambios"}
+          </span>
+        )}
       </div>
     </div>
   );

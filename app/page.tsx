@@ -4,7 +4,16 @@ import React, { useState, useEffect } from "react";
 import Sidebar from "@/components/Sidebar";
 import BoardHeader from "@/components/BoardHeader";
 import Column from "@/components/Column";
-import { BoardType, ColumnType, CardType } from "@/types/kanban";
+import DetailDrawer from "@/components/DetailDrawer";
+import { BoardType, ColumnType, CardType, HistoryLogType } from "@/types/kanban";
+
+const CURRENT_USER = "Usuario AAAZZZ";
+
+const createHistoryLog = (message: string): HistoryLogType => ({
+  timestamp: Date.now(),
+  userId: CURRENT_USER,
+  message,
+});
 
 const initialBoard: BoardType = {
   id: "board-1",
@@ -21,6 +30,9 @@ const initialBoard: BoardType = {
           description: "Crear mockups y prototipos para la nueva página de inicio",
           columnId: "col-1",
           priority: "high",
+          history: [
+            createHistoryLog("Tarjeta creada"),
+          ],
         },
         {
           id: "card-2",
@@ -28,6 +40,9 @@ const initialBoard: BoardType = {
           description: "Análisis de mercado y benchmarking",
           columnId: "col-1",
           priority: "medium",
+          history: [
+            createHistoryLog("Tarjeta creada"),
+          ],
         },
         {
           id: "card-3",
@@ -35,6 +50,9 @@ const initialBoard: BoardType = {
           description: "",
           columnId: "col-1",
           priority: "low",
+          history: [
+            createHistoryLog("Tarjeta creada"),
+          ],
         },
       ],
     },
@@ -48,6 +66,9 @@ const initialBoard: BoardType = {
           description: "Configurar OAuth y JWT para el sistema de login",
           columnId: "col-2",
           priority: "high",
+          history: [
+            createHistoryLog("Tarjeta creada"),
+          ],
         },
         {
           id: "card-5",
@@ -55,6 +76,9 @@ const initialBoard: BoardType = {
           description: "Mejorar queries y añadir índices",
           columnId: "col-2",
           priority: "medium",
+          history: [
+            createHistoryLog("Tarjeta creada"),
+          ],
         },
       ],
     },
@@ -68,6 +92,9 @@ const initialBoard: BoardType = {
           description: "Configuración inicial con TypeScript y Tailwind",
           columnId: "col-3",
           priority: "high",
+          history: [
+            createHistoryLog("Tarjeta creada"),
+          ],
         },
         {
           id: "card-7",
@@ -75,6 +102,9 @@ const initialBoard: BoardType = {
           description: "Sidebar, Header y estructura principal",
           columnId: "col-3",
           priority: "medium",
+          history: [
+            createHistoryLog("Tarjeta creada"),
+          ],
         },
       ],
     },
@@ -116,34 +146,46 @@ const IconX = ({ className }: { className?: string }) => (
 export default function Home() {
   const [board, setBoard] = useState<BoardType>(initialBoard);
   const [mounted, setMounted] = useState(false);
-  const [isAddingColumn, setIsAddingColumn] = useState(false);
-  const [newColumnTitle, setNewColumnTitle] = useState("");
-  const [editingColumnId, setEditingColumnId] = useState<string | null>(null);
-  const [editingColumnTitle, setEditingColumnTitle] = useState("");
+  const [selectedCardId, setSelectedCardId] = useState<string | null>(null);
+  
   const [isCreatingTask, setIsCreatingTask] = useState(false);
   const [newTaskTitle, setNewTaskTitle] = useState("");
   const [newTaskColumn, setNewTaskColumn] = useState("");
   const [newTaskPriority, setNewTaskPriority] = useState<"low" | "medium" | "high">("medium");
+
   const [editingCard, setEditingCard] = useState<CardType | null>(null);
   const [editCardTitle, setEditCardTitle] = useState("");
   const [editCardDescription, setEditCardDescription] = useState("");
   const [editCardPriority, setEditCardPriority] = useState<"low" | "medium" | "high">("medium");
 
-  // Load board from localStorage
+  const [editingColumnId, setEditingColumnId] = useState<string | null>(null);
+  const [editingColumnTitle, setEditingColumnTitle] = useState("");
+
+  const [isAddingColumn, setIsAddingColumn] = useState(false);
+  const [newColumnTitle, setNewColumnTitle] = useState("");
+
   useEffect(() => {
     setMounted(true);
     const savedBoard = localStorage.getItem("OPENKANBAN_BOARD");
     if (savedBoard) {
-      try {
-        const parsedBoard = JSON.parse(savedBoard);
-        setBoard(parsedBoard);
-      } catch (error) {
-        console.error("Error loading board from localStorage:", error);
-      }
+      const parsedBoard = JSON.parse(savedBoard);
+      
+      // Migrar tarjetas antiguas sin historial
+      const migratedBoard = {
+        ...parsedBoard,
+        columns: parsedBoard.columns.map((col: ColumnType) => ({
+          ...col,
+          cards: col.cards.map((card: CardType) => ({
+            ...card,
+            history: card.history || [createHistoryLog("Tarjeta creada")],
+          })),
+        })),
+      };
+      
+      setBoard(migratedBoard);
     }
   }, []);
 
-  // Save board to localStorage
   useEffect(() => {
     if (!mounted) return;
     localStorage.setItem("OPENKANBAN_BOARD", JSON.stringify(board));
@@ -160,6 +202,7 @@ export default function Home() {
       description: "",
       columnId,
       priority: "medium",
+      history: [createHistoryLog("Tarjeta creada")],
     };
 
     setBoard((prev) => ({
@@ -187,6 +230,7 @@ export default function Home() {
         description: "",
         columnId: newTaskColumn,
         priority: newTaskPriority,
+        history: [createHistoryLog("Tarjeta creada")],
       };
 
       setBoard((prev) => ({
@@ -222,17 +266,38 @@ export default function Home() {
 
   const handleSaveCardEdit = () => {
     if (editingCard && editCardTitle.trim()) {
+      const changes: string[] = [];
+      
+      if (editCardTitle.trim() !== editingCard.title) {
+        changes.push("título");
+      }
+      if (editCardDescription.trim() !== editingCard.description) {
+        changes.push("descripción");
+      }
+      if (editCardPriority !== editingCard.priority) {
+        changes.push("prioridad");
+      }
+
+      const updatedCard: CardType = {
+        ...editingCard,
+        title: editCardTitle.trim(),
+        description: editCardDescription.trim(),
+        priority: editCardPriority,
+        history: changes.length > 0
+          ? [...editingCard.history, createHistoryLog(`Actualizó ${changes.join(", ")}`)]
+          : editingCard.history,
+      };
+
       setBoard((prev) => ({
         ...prev,
         columns: prev.columns.map((col) => ({
           ...col,
           cards: col.cards.map((card) =>
-            card.id === editingCard.id
-              ? { ...card, title: editCardTitle.trim(), description: editCardDescription.trim(), priority: editCardPriority }
-              : card
+            card.id === editingCard.id ? updatedCard : card
           ),
         })),
       }));
+
       setEditingCard(null);
       setEditCardTitle("");
       setEditCardDescription("");
@@ -253,6 +318,47 @@ export default function Home() {
       columns: prev.columns.map((col) => ({
         ...col,
         cards: col.cards.filter((card) => card.id !== cardId),
+      })),
+    }));
+  };
+
+  const handleCardClick = (cardId: string) => {
+    setSelectedCardId(cardId);
+  };
+
+  const handleUpdateCard = (updatedCard: CardType) => {
+    const originalCard = board.columns
+      .flatMap(col => col.cards)
+      .find(c => c.id === updatedCard.id);
+
+    if (!originalCard) return;
+
+    const changes: string[] = [];
+    
+    if (updatedCard.title !== originalCard.title) {
+      changes.push("título");
+    }
+    if (updatedCard.description !== originalCard.description) {
+      changes.push("descripción");
+    }
+    if (updatedCard.priority !== originalCard.priority) {
+      changes.push("prioridad");
+    }
+
+    const cardWithHistory: CardType = changes.length > 0
+      ? {
+          ...updatedCard,
+          history: [...updatedCard.history, createHistoryLog(`Actualizó ${changes.join(", ")}`)],
+        }
+      : updatedCard;
+
+    setBoard((prev) => ({
+      ...prev,
+      columns: prev.columns.map((col) => ({
+        ...col,
+        cards: col.cards.map((card) =>
+          card.id === updatedCard.id ? cardWithHistory : card
+        ),
       })),
     }));
   };
@@ -323,6 +429,19 @@ export default function Home() {
     setIsAddingColumn(false);
   };
 
+  const handleChangeColumnColor = (columnId: string, color: string) => {
+    setBoard((prev) => ({
+      ...prev,
+      columns: prev.columns.map((col) =>
+        col.id === columnId ? { ...col, color } : col
+      ),
+    }));
+  };
+
+  const selectedCard = selectedCardId
+    ? board.columns.flatMap(col => col.cards).find(c => c.id === selectedCardId)
+    : null;
+
   return (
     <div className="flex h-screen w-full bg-gray-50 dark:bg-gray-900 overflow-hidden transition-colors duration-200">
       <Sidebar />
@@ -364,8 +483,10 @@ export default function Home() {
                     onAddCard={handleAddNewCard}
                     onEditCard={handleEditCard}
                     onDeleteCard={handleDeleteCard}
+                    onCardClick={handleCardClick}
                     onEditColumn={() => handleEditColumn(column.id, column.title)}
                     onDeleteColumn={() => handleDeleteColumn(column.id)}
+                    onChangeColor={handleChangeColumnColor}
                   />
                 )}
                 
@@ -427,7 +548,6 @@ export default function Home() {
         </main>
       </div>
 
-      {/* Create Task Modal */}
       {isCreatingTask && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={handleCancelTask}>
           <div className="bg-white dark:bg-gray-800 rounded-3xl p-6 w-full max-w-md shadow-2xl" onClick={(e) => e.stopPropagation()}>
@@ -511,7 +631,6 @@ export default function Home() {
         </div>
       )}
 
-      {/* Edit Card Modal */}
       {editingCard && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={handleCancelCardEdit}>
           <div className="bg-white dark:bg-gray-800 rounded-3xl p-6 w-full max-w-md shadow-2xl" onClick={(e) => e.stopPropagation()}>
@@ -584,11 +703,20 @@ export default function Home() {
                 onClick={handleSaveCardEdit}
                 className="flex-1 px-4 py-3 bg-cyan-500 hover:bg-cyan-600 text-white rounded-xl font-semibold transition-colors"
               >
-                Guardar Cambios
+                Guardar
               </button>
             </div>
           </div>
         </div>
+      )}
+
+      {selectedCard && (
+        <DetailDrawer
+          card={selectedCard}
+          onClose={() => setSelectedCardId(null)}
+          onUpdate={handleUpdateCard}
+          onDelete={handleDeleteCard}
+        />
       )}
     </div>
   );
