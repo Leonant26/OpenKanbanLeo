@@ -17,7 +17,7 @@ Este proyecto fue desarrollado por:
 * **Manuel Casique**
 * **Geyser Velasquez**
 * **Guillermo García**
-* **Leonal Cazorla**
+* **Leonel Cazorla**
 
 ---
 
