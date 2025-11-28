@@ -17,7 +17,7 @@ Thumbs.db
 *.swo
 
 # ------------------------------------------------------
-# BACKEND (LARAVEL 12)
+# BACKEND (LARAVEL 11)
 # ------------------------------------------------------
 /backend/vendor/
 /backend/node_modules/
@@ -70,3 +70,4 @@ Thumbs.db
 
 # Testing coverage
 /frontend/coverage/
+node_modules
